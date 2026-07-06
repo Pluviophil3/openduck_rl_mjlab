@@ -1,0 +1,48 @@
+--- git commit ---
+c97a7e0dda749e11894574e2baf0fb9ff2ce5409
+
+
+--- git status ---
+On branch main
+Your branch is ahead of 'origin/main' by 5 commits.
+  (use "git push" to publish your local commits)
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	goal.md
+	src/__pycache__/
+	src/assets/__pycache__/
+	src/assets/robots/__pycache__/
+	src/assets/robots/open_duck_mini_v2/__pycache__/
+	src/assets/robots/unitree_a2/__pycache__/
+	src/assets/robots/unitree_as2/__pycache__/
+	src/assets/robots/unitree_g1/__pycache__/
+	src/assets/robots/unitree_go2/__pycache__/
+	src/assets/robots/unitree_h1_2/__pycache__/
+	src/assets/robots/unitree_h2/__pycache__/
+	src/assets/robots/unitree_r1/__pycache__/
+	src/tasks/__pycache__/
+	src/tasks/tracking/__pycache__/
+	src/tasks/tracking/config/__pycache__/
+	src/tasks/tracking/config/g1/__pycache__/
+	src/tasks/tracking/config/g1_23dof/__pycache__/
+	src/tasks/tracking/config/open_duck/__pycache__/
+	src/tasks/tracking/mdp/__pycache__/
+	src/tasks/tracking/rl/__pycache__/
+	src/tasks/velocity/__pycache__/
+	src/tasks/velocity/config/__pycache__/
+	src/tasks/velocity/config/a2/__pycache__/
+	src/tasks/velocity/config/as2/__pycache__/
+	src/tasks/velocity/config/g1/__pycache__/
+	src/tasks/velocity/config/g1_23dof/__pycache__/
+	src/tasks/velocity/config/go2/__pycache__/
+	src/tasks/velocity/config/h1_2/__pycache__/
+	src/tasks/velocity/config/h2/__pycache__/
+	src/tasks/velocity/config/r1/__pycache__/
+	src/tasks/velocity/mdp/__pycache__/
+	src/tasks/velocity/rl/__pycache__/
+
+nothing added to commit but untracked files present (use "git add" to track) 
+
+
+--- git diff ---
