@@ -9,6 +9,11 @@ from mjlab.tasks.tracking.mdp import MotionCommandCfg
 from src.assets.robots import OPEN_DUCK_ACTION_SCALE, get_open_duck_robot_cfg
 from src.tasks.tracking.tracking_env_cfg import make_tracking_env_cfg
 
+from .randomization import (
+  RandomizationProfileName,
+  apply_open_duck_randomization,
+)
+
 OPEN_DUCK_TRACKED_BODY_NAMES = (
   "trunk_assembly",
   "left_roll_to_pitch_assembly",
@@ -24,6 +29,7 @@ OPEN_DUCK_TRACKED_BODY_NAMES = (
 def open_duck_flat_tracking_env_cfg(
   has_state_estimation: bool = True,
   play: bool = False,
+  randomization_profile: RandomizationProfileName = "baseline",
 ) -> ManagerBasedRlEnvCfg:
   """Create the OpenDuck Mini V2 motion-tracking configuration."""
   cfg = make_tracking_env_cfg()
@@ -121,11 +127,10 @@ def open_duck_flat_tracking_env_cfg(
 
   if play:
     cfg.episode_length_s = int(1e9)
-    cfg.observations["actor"].enable_corruption = False
-    cfg.events.pop("push_robot", None)
-    motion_cmd.pose_range = {}
-    motion_cmd.velocity_range = {}
-    motion_cmd.joint_position_range = (0.0, 0.0)
     motion_cmd.sampling_mode = "start"
+
+  apply_open_duck_randomization(
+    cfg, "nominal" if play else randomization_profile
+  )
 
   return cfg

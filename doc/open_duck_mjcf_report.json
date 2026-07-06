@@ -1,0 +1,740 @@
+{
+  "mjcf": "/home/luolinfeng/duck_ws/duck_amp/unitree_rl_mjlab/src/assets/robots/open_duck_mini_v2/xmls/open_duck_mini_v2.xml",
+  "mujoco_version": "3.5.0",
+  "compiled_counts": {
+    "bodies_excluding_world": 22,
+    "joints_including_free_joint": 17,
+    "actuators_in_xml": 16,
+    "position_coordinates": 23,
+    "velocity_coordinates": 22
+  },
+  "total_mass_kg": 2.0615492840000003,
+  "xml_timestep_s": 0.002,
+  "gravity_m_s2": [
+    0.0,
+    0.0,
+    -9.81
+  ],
+  "bodies": [
+    {
+      "name": "base",
+      "mass_kg": 0.0,
+      "inertial_position_m": [
+        0.0,
+        0.0,
+        0.22
+      ],
+      "principal_inertia_kg_m2": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "trunk_assembly",
+      "mass_kg": 0.698526,
+      "inertial_position_m": [
+        -0.0483259,
+        -9.97823e-05,
+        0.0384971
+      ],
+      "principal_inertia_kg_m2": [
+        0.00344489,
+        0.00292719,
+        0.00167606
+      ]
+    },
+    {
+      "name": "trunk",
+      "mass_kg": 1e-09,
+      "inertial_position_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "principal_inertia_kg_m2": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "hip_roll_assembly",
+      "mass_kg": 0.06648,
+      "inertial_position_m": [
+        0.000795081,
+        -5.46541e-06,
+        -0.03306
+      ],
+      "principal_inertia_kg_m2": [
+        2.81818e-05,
+        2.44554e-05,
+        1.42544e-05
+      ]
+    },
+    {
+      "name": "left_roll_to_pitch_assembly",
+      "mass_kg": 0.07516,
+      "inertial_position_m": [
+        0.0508042,
+        -0.00041105,
+        0.0204704
+      ],
+      "principal_inertia_kg_m2": [
+        4.13874e-05,
+        2.82416e-05,
+        2.5117e-05
+      ]
+    },
+    {
+      "name": "knee_and_ankle_assembly",
+      "mass_kg": 0.12407,
+      "inertial_position_m": [
+        0.00253369,
+        -0.0390636,
+        0.0102776
+      ],
+      "principal_inertia_kg_m2": [
+        0.000228502,
+        0.000216625,
+        7.02746e-05
+      ]
+    },
+    {
+      "name": "knee_and_ankle_assembly_2",
+      "mass_kg": 0.07259,
+      "inertial_position_m": [
+        5.01859e-06,
+        -0.0577465,
+        0.0181136
+      ],
+      "principal_inertia_kg_m2": [
+        4.99575e-05,
+        4.23935e-05,
+        1.8727e-05
+      ]
+    },
+    {
+      "name": "foot_assembly",
+      "mass_kg": 0.07524,
+      "inertial_position_m": [
+        0.0110718,
+        -0.0246608,
+        0.0190626
+      ],
+      "principal_inertia_kg_m2": [
+        6.74949e-05,
+        6.06095e-05,
+        1.86965e-05
+      ]
+    },
+    {
+      "name": "left_foot",
+      "mass_kg": 1e-09,
+      "inertial_position_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "principal_inertia_kg_m2": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "neck_pitch_assembly",
+      "mass_kg": 0.06618,
+      "inertial_position_m": [
+        -5.63137e-06,
+        0.0492968,
+        0.0181786
+      ],
+      "principal_inertia_kg_m2": [
+        3.49456e-05,
+        2.80043e-05,
+        1.70231e-05
+      ]
+    },
+    {
+      "name": "head_pitch_to_yaw",
+      "mass_kg": 0.0169378,
+      "inertial_position_m": [
+        -0.00766247,
+        0.026015,
+        0.0186681
+      ],
+      "principal_inertia_kg_m2": [
+        9.7861e-06,
+        8.03124e-06,
+        4.28979e-06
+      ]
+    },
+    {
+      "name": "neck_yaw_assembly",
+      "mass_kg": 0.0918099,
+      "inertial_position_m": [
+        0.00412907,
+        3.95745e-06,
+        -0.0222828
+      ],
+      "principal_inertia_kg_m2": [
+        7.08927e-05,
+        6.94935e-05,
+        3.06805e-05
+      ]
+    },
+    {
+      "name": "head_assembly",
+      "mass_kg": 0.352583,
+      "inertial_position_m": [
+        0.00761779,
+        0.00018098,
+        0.0242575
+      ],
+      "principal_inertia_kg_m2": [
+        0.00207104,
+        0.00144128,
+        0.000909578
+      ]
+    },
+    {
+      "name": "head",
+      "mass_kg": 1e-09,
+      "inertial_position_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "principal_inertia_kg_m2": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "left_antenna_holder",
+      "mass_kg": 0.00421629,
+      "inertial_position_m": [
+        -0.00493985,
+        0.00813032,
+        -0.00233374
+      ],
+      "principal_inertia_kg_m2": [
+        3.80836e-06,
+        3.59678e-06,
+        2.45273e-07
+      ]
+    },
+    {
+      "name": "right_antenna_holder",
+      "mass_kg": 0.00421629,
+      "inertial_position_m": [
+        -0.00493986,
+        -0.00826213,
+        -0.00233374
+      ],
+      "principal_inertia_kg_m2": [
+        3.86998e-06,
+        3.6585e-06,
+        2.45146e-07
+      ]
+    },
+    {
+      "name": "hip_roll_assembly_2",
+      "mass_kg": 0.06648,
+      "inertial_position_m": [
+        0.000795081,
+        -5.46541e-06,
+        -0.03306
+      ],
+      "principal_inertia_kg_m2": [
+        2.81818e-05,
+        2.44554e-05,
+        1.42544e-05
+      ]
+    },
+    {
+      "name": "right_roll_to_pitch_assembly",
+      "mass_kg": 0.07516,
+      "inertial_position_m": [
+        -0.0508042,
+        -0.000420742,
+        0.0204704
+      ],
+      "principal_inertia_kg_m2": [
+        4.13872e-05,
+        2.82413e-05,
+        2.51163e-05
+      ]
+    },
+    {
+      "name": "knee_and_ankle_assembly_3",
+      "mass_kg": 0.12407,
+      "inertial_position_m": [
+        0.00253369,
+        0.0390636,
+        0.010809
+      ],
+      "principal_inertia_kg_m2": [
+        0.000228782,
+        0.00021758,
+        7.09527e-05
+      ]
+    },
+    {
+      "name": "knee_and_ankle_assembly_4",
+      "mass_kg": 0.07259,
+      "inertial_position_m": [
+        5.01859e-06,
+        -0.0577465,
+        0.0181136
+      ],
+      "principal_inertia_kg_m2": [
+        4.99575e-05,
+        4.23935e-05,
+        1.8727e-05
+      ]
+    },
+    {
+      "name": "foot_assembly_2",
+      "mass_kg": 0.07524,
+      "inertial_position_m": [
+        0.0110718,
+        -0.0246608,
+        0.0190626
+      ],
+      "principal_inertia_kg_m2": [
+        6.74949e-05,
+        6.06095e-05,
+        1.86965e-05
+      ]
+    },
+    {
+      "name": "right_foot",
+      "mass_kg": 1e-09,
+      "inertial_position_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "principal_inertia_kg_m2": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "joints": [
+    {
+      "name": "left_hip_yaw",
+      "range_rad": [
+        -0.523599,
+        0.523599
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "left_hip_roll",
+      "range_rad": [
+        -0.436332,
+        0.436332
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "left_hip_pitch",
+      "range_rad": [
+        -1.22173,
+        0.523599
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "left_knee",
+      "range_rad": [
+        -1.5708,
+        1.5708
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "left_ankle",
+      "range_rad": [
+        -1.5708,
+        1.5708
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "neck_pitch",
+      "range_rad": [
+        -0.349066,
+        1.13446
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "head_pitch",
+      "range_rad": [
+        -0.785398,
+        0.785398
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "head_yaw",
+      "range_rad": [
+        -2.79253,
+        2.79253
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "head_roll",
+      "range_rad": [
+        -0.523599,
+        0.523599
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "left_antenna",
+      "range_rad": [
+        -1.5708,
+        1.5708
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "right_antenna",
+      "range_rad": [
+        -1.5708,
+        1.5708
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "right_hip_yaw",
+      "range_rad": [
+        -0.523599,
+        0.523599
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "right_hip_roll",
+      "range_rad": [
+        -0.436332,
+        0.436332
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "right_hip_pitch",
+      "range_rad": [
+        -0.523599,
+        1.22173
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "right_knee",
+      "range_rad": [
+        -1.5708,
+        1.5708
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    },
+    {
+      "name": "right_ankle",
+      "range_rad": [
+        -1.5708,
+        1.5708
+      ],
+      "damping": 0.65,
+      "frictionloss": 0.083,
+      "armature": 0.027
+    }
+  ],
+  "actuators": [
+    {
+      "name": "left_hip_yaw",
+      "control_range_rad": [
+        -0.523599,
+        0.523599
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "left_hip_roll",
+      "control_range_rad": [
+        -0.436332,
+        0.436332
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "left_hip_pitch",
+      "control_range_rad": [
+        -1.22173,
+        0.5235989999999999
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "left_knee",
+      "control_range_rad": [
+        -1.5708,
+        1.5708
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "left_ankle",
+      "control_range_rad": [
+        -1.5708,
+        1.5708
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "neck_pitch",
+      "control_range_rad": [
+        -0.34906599999999993,
+        1.13446
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "head_pitch",
+      "control_range_rad": [
+        -0.785398,
+        0.785398
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "head_yaw",
+      "control_range_rad": [
+        -2.79253,
+        2.79253
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "head_roll",
+      "control_range_rad": [
+        -0.523599,
+        0.523599
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "left_antenna",
+      "control_range_rad": [
+        -1.5708,
+        1.5708
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "right_antenna",
+      "control_range_rad": [
+        -1.5708,
+        1.5708
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "right_hip_yaw",
+      "control_range_rad": [
+        -0.523599,
+        0.523599
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "right_hip_roll",
+      "control_range_rad": [
+        -0.436332,
+        0.436332
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "right_hip_pitch",
+      "control_range_rad": [
+        -0.5235989999999999,
+        1.22173
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "right_knee",
+      "control_range_rad": [
+        -1.5708,
+        1.5708
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    },
+    {
+      "name": "right_ankle",
+      "control_range_rad": [
+        -1.5708,
+        1.5708
+      ],
+      "force_range": [
+        -3.57,
+        3.57
+      ],
+      "kp": 6.55,
+      "kv": 0.0
+    }
+  ],
+  "foot_contacts": [
+    {
+      "name": "left_foot_bottom_tpu",
+      "friction": [
+        0.8,
+        0.02,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.015,
+        1.0,
+        0.031,
+        0.5,
+        2.0
+      ]
+    },
+    {
+      "name": "right_foot_bottom_tpu",
+      "friction": [
+        0.8,
+        0.02,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.015,
+        1.0,
+        0.031,
+        0.5,
+        2.0
+      ]
+    }
+  ]
+}

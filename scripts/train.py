@@ -8,6 +8,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal, cast
 
+# Both this repository and sibling workspaces expose a top-level ``src`` package.
+# Pin direct script execution to this checkout before importing project modules.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) in sys.path:
+  sys.path.remove(str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT))
+
 import tyro
 
 from mjlab.envs import ManagerBasedRlEnv, ManagerBasedRlEnvCfg
@@ -18,6 +25,11 @@ from mjlab.utils.gpu import select_gpus
 from mjlab.utils.os import dump_yaml, get_checkpoint_path
 from mjlab.utils.torch import configure_torch_backends
 from mjlab.utils.wrappers import VideoRecorder
+
+from src.tasks.tracking.config.open_duck.randomization import (
+  RandomizationProfileName,
+  apply_open_duck_randomization,
+)
 
 
 @dataclass(frozen=True)
@@ -31,6 +43,10 @@ class TrainConfig:
   enable_nan_guard: bool = False
   torchrunx_log_dir: str | None = None
   gpu_ids: list[int] | Literal["all"] | None = field(default_factory=lambda: [0])
+  randomization_profile: RandomizationProfileName | None = None
+  """Override the OpenDuck domain-randomization profile."""
+  checkpoint_file: str | None = None
+  """Explicit local checkpoint used to initialize or resume training."""
 
   @staticmethod
   def from_task(task_id: str) -> "TrainConfig":
@@ -55,6 +71,17 @@ def run_train(task_id: str, cfg: TrainConfig, log_dir: Path) -> None:
     seed = cfg.agent.seed + local_rank
 
   configure_torch_backends()
+
+  if cfg.randomization_profile is not None:
+    if not task_id.startswith("OpenDuck-"):
+      raise ValueError(
+        "--randomization-profile is currently supported only for OpenDuck tasks"
+      )
+    apply_open_duck_randomization(cfg.env, cfg.randomization_profile)
+    print(
+      "[INFO] OpenDuck randomization profile: "
+      f"{cfg.randomization_profile}"
+    )
 
   cfg.agent.seed = seed
   cfg.env.seed = seed
@@ -96,11 +123,15 @@ def run_train(task_id: str, cfg: TrainConfig, log_dir: Path) -> None:
   log_root_path = log_dir.parent  # Go up from specific run dir to experiment dir.
 
   resume_path: Path | None = None
-  if cfg.agent.resume:
-      # Load checkpoint from local filesystem.
-      resume_path = get_checkpoint_path(
-        log_root_path, cfg.agent.load_run, cfg.agent.load_checkpoint
-      )
+  if cfg.checkpoint_file is not None:
+    resume_path = Path(cfg.checkpoint_file).expanduser().resolve()
+    if not resume_path.is_file():
+      raise FileNotFoundError(f"Checkpoint file not found: {resume_path}")
+  elif cfg.agent.resume:
+    # Load checkpoint from local filesystem.
+    resume_path = get_checkpoint_path(
+      log_root_path, cfg.agent.load_run, cfg.agent.load_checkpoint
+    )
 
   # Only record videos on rank 0 to avoid multiple workers writing to the same files.
   if cfg.video and rank == 0:
