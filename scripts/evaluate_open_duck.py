@@ -24,7 +24,6 @@ import tyro
 from mjlab.envs import ManagerBasedRlEnv
 from mjlab.rl import MjlabOnPolicyRunner, RslRlVecEnvWrapper
 from mjlab.tasks.registry import load_env_cfg, load_rl_cfg, load_runner_cls
-from mjlab.tasks.tracking.mdp import MotionCommand, MotionCommandCfg
 from mjlab.utils.torch import configure_torch_backends
 
 from src.tasks.tracking.config.open_duck.randomization import (
@@ -32,6 +31,7 @@ from src.tasks.tracking.config.open_duck.randomization import (
   apply_open_duck_randomization,
   profile_as_dict,
 )
+from src.tasks.tracking.mdp import MotionCommand, MotionCommandCfg
 from src.tasks.tracking.mdp.metrics import compute_root_relative_mpkpe
 
 

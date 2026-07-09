@@ -16,7 +16,7 @@ OPEN_DUCK_XML: Path = (
   / "robots"
   / "open_duck_mini_v2"
   / "xmls"
-  / "open_duck_mini_v2.xml"
+  / "open_duck_mini_v2_real.xml"
 )
 assert OPEN_DUCK_XML.exists()
 

@@ -31,11 +31,20 @@ _DESIRED_FRAME_COLORS = ((1.0, 0.5, 0.5), (0.5, 1.0, 0.5), (0.5, 0.5, 1.0))
 
 class MotionLoader:
   def __init__(
-    self, motion_file: str, body_indexes: torch.Tensor, device: str = "cpu"
+    self,
+    motion_file: str,
+    body_indexes: torch.Tensor,
+    joint_names: tuple[str, ...],
+    device: str = "cpu",
   ) -> None:
     data = np.load(motion_file)
-    self.joint_pos = torch.tensor(data["joint_pos"], dtype=torch.float32, device=device)
-    self.joint_vel = torch.tensor(data["joint_vel"], dtype=torch.float32, device=device)
+    joint_pos = np.asarray(data["joint_pos"], dtype=np.float32)
+    joint_vel = np.asarray(data["joint_vel"], dtype=np.float32)
+    joint_pos, joint_vel = self._align_joint_arrays(
+      joint_pos, joint_vel, data, joint_names
+    )
+    self.joint_pos = torch.tensor(joint_pos, dtype=torch.float32, device=device)
+    self.joint_vel = torch.tensor(joint_vel, dtype=torch.float32, device=device)
     self._body_pos_w = torch.tensor(
       data["body_pos_w"], dtype=torch.float32, device=device
     )
@@ -54,6 +63,53 @@ class MotionLoader:
     self.body_lin_vel_w = self._body_lin_vel_w[:, self._body_indexes]
     self.body_ang_vel_w = self._body_ang_vel_w[:, self._body_indexes]
     self.time_step_total = self.joint_pos.shape[0]
+
+  @staticmethod
+  def _align_joint_arrays(
+    joint_pos: np.ndarray,
+    joint_vel: np.ndarray,
+    data: np.lib.npyio.NpzFile,
+    joint_names: tuple[str, ...],
+  ) -> tuple[np.ndarray, np.ndarray]:
+    expected_count = len(joint_names)
+    if joint_pos.shape[1] == expected_count:
+      return joint_pos, joint_vel
+
+    if "joint_names" in data.files:
+      source_joint_names = tuple(str(name) for name in data["joint_names"])
+    else:
+      source_joint_names = tuple(
+        name for name in joint_names if not name.endswith("_backlash")
+      )
+
+    if joint_pos.shape[1] != len(source_joint_names):
+      raise ValueError(
+        f"Motion has {joint_pos.shape[1]} joint columns but "
+        f"{len(source_joint_names)} source joint names were inferred"
+      )
+
+    source_index_by_name = {name: index for index, name in enumerate(source_joint_names)}
+    aligned_pos = np.zeros((joint_pos.shape[0], expected_count), dtype=np.float32)
+    aligned_vel = np.zeros((joint_vel.shape[0], expected_count), dtype=np.float32)
+    missing_joint_names: list[str] = []
+
+    for target_index, target_name in enumerate(joint_names):
+      if target_name.endswith("_backlash"):
+        continue
+      source_index = source_index_by_name.get(target_name)
+      if source_index is None:
+        missing_joint_names.append(target_name)
+        continue
+      aligned_pos[:, target_index] = joint_pos[:, source_index]
+      aligned_vel[:, target_index] = joint_vel[:, source_index]
+
+    if missing_joint_names:
+      raise ValueError(
+        "Motion is missing non-backlash joints required by the robot: "
+        f"{missing_joint_names}"
+      )
+
+    return aligned_pos, aligned_vel
 
 
 class MotionCommand(CommandTerm):
@@ -75,8 +131,16 @@ class MotionCommand(CommandTerm):
     )
 
     self.motion = MotionLoader(
-      self.cfg.motion_file, self.body_indexes, device=self.device
+      self.cfg.motion_file,
+      self.body_indexes,
+      tuple(self.robot.joint_names),
+      device=self.device,
     )
+    (
+      self._main_joint_ids,
+      self._backlash_joint_ids,
+      self._has_backlash_joint,
+    ) = self._build_effective_joint_indexes(tuple(self.robot.joint_names))
     self.time_steps = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
     self.body_pos_relative_w = torch.zeros(
       self.num_envs, len(cfg.body_names), 3, device=self.device
@@ -125,10 +189,18 @@ class MotionCommand(CommandTerm):
 
   @property
   def joint_pos(self) -> torch.Tensor:
-    return self.motion.joint_pos[self.time_steps]
+    return self._effective_joint_values(self.sim_joint_pos)
 
   @property
   def joint_vel(self) -> torch.Tensor:
+    return self._effective_joint_values(self.sim_joint_vel)
+
+  @property
+  def sim_joint_pos(self) -> torch.Tensor:
+    return self.motion.joint_pos[self.time_steps]
+
+  @property
+  def sim_joint_vel(self) -> torch.Tensor:
     return self.motion.joint_vel[self.time_steps]
 
   @property
@@ -170,11 +242,11 @@ class MotionCommand(CommandTerm):
 
   @property
   def robot_joint_pos(self) -> torch.Tensor:
-    return self.robot.data.joint_pos
+    return self._effective_joint_values(self.robot.data.joint_pos)
 
   @property
   def robot_joint_vel(self) -> torch.Tensor:
-    return self.robot.data.joint_vel
+    return self._effective_joint_values(self.robot.data.joint_vel)
 
   @property
   def robot_body_pos_w(self) -> torch.Tensor:
@@ -207,6 +279,38 @@ class MotionCommand(CommandTerm):
   @property
   def robot_anchor_ang_vel_w(self) -> torch.Tensor:
     return self.robot.data.body_link_ang_vel_w[:, self.robot_anchor_body_index]
+
+  def _build_effective_joint_indexes(
+    self, joint_names: tuple[str, ...]
+  ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    backlash_index_by_main = {
+      name.removesuffix("_backlash"): index
+      for index, name in enumerate(joint_names)
+      if name.endswith("_backlash")
+    }
+    main_joint_ids: list[int] = []
+    backlash_joint_ids: list[int] = []
+    has_backlash_joint: list[bool] = []
+    for index, name in enumerate(joint_names):
+      if name.endswith("_backlash"):
+        continue
+      main_joint_ids.append(index)
+      backlash_index = backlash_index_by_main.get(name, index)
+      backlash_joint_ids.append(backlash_index)
+      has_backlash_joint.append(backlash_index != index)
+
+    return (
+      torch.tensor(main_joint_ids, dtype=torch.long, device=self.device),
+      torch.tensor(backlash_joint_ids, dtype=torch.long, device=self.device),
+      torch.tensor(has_backlash_joint, dtype=torch.bool, device=self.device),
+    )
+
+  def _effective_joint_values(self, joint_values: torch.Tensor) -> torch.Tensor:
+    main_values = joint_values[:, self._main_joint_ids]
+    backlash_values = joint_values[:, self._backlash_joint_ids]
+    return main_values + torch.where(
+      self._has_backlash_joint, backlash_values, torch.zeros_like(backlash_values)
+    )
 
   def _update_metrics(self):
     self.metrics["error_anchor_pos"] = torch.norm(
@@ -332,15 +436,16 @@ class MotionCommand(CommandTerm):
     root_lin_vel[env_ids] += rand_samples[:, :3]
     root_ang_vel[env_ids] += rand_samples[:, 3:]
 
-    joint_pos = self.joint_pos.clone()
-    joint_vel = self.joint_vel.clone()
+    joint_pos = self.sim_joint_pos.clone()
+    joint_vel = self.sim_joint_vel.clone()
 
-    joint_pos += sample_uniform(
+    main_joint_pos = joint_pos[:, self._main_joint_ids] + sample_uniform(
       lower=self.cfg.joint_position_range[0],
       upper=self.cfg.joint_position_range[1],
-      size=joint_pos.shape,
+      size=(joint_pos.shape[0], self._main_joint_ids.numel()),
       device=joint_pos.device,  # type: ignore
     )
+    joint_pos[:, self._main_joint_ids] = main_joint_pos
     soft_joint_pos_limits = self.robot.data.soft_joint_pos_limits[env_ids]
     joint_pos[env_ids] = torch.clip(
       joint_pos[env_ids], soft_joint_pos_limits[:, :, 0], soft_joint_pos_limits[:, :, 1]
@@ -419,7 +524,7 @@ class MotionCommand(CommandTerm):
         qpos = np.zeros(self._env.sim.mj_model.nq)
         qpos[free_joint_q_adr[0:3]] = self.body_pos_w[batch, 0].cpu().numpy()
         qpos[free_joint_q_adr[3:7]] = self.body_quat_w[batch, 0].cpu().numpy()
-        qpos[joint_q_adr] = self.joint_pos[batch].cpu().numpy()
+        qpos[joint_q_adr] = self.sim_joint_pos[batch].cpu().numpy()
 
         visualizer.add_ghost_mesh(qpos, model=self._ghost_model, label=f"ghost_{batch}")
 

@@ -13,11 +13,12 @@ from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs.mdp import dr, push_by_setting_velocity
 from mjlab.managers.event_manager import EventTermCfg, requires_model_fields
 from mjlab.managers.scene_entity_config import SceneEntityCfg
-from mjlab.tasks.tracking.mdp import MotionCommandCfg
 from mjlab.utils.noise import (
   NoiseModelWithAdditiveBiasCfg,
   UniformNoiseCfg,
 )
+
+from src.tasks.tracking.mdp import MotionCommandCfg
 
 if TYPE_CHECKING:
   from mjlab.envs import ManagerBasedRlEnv

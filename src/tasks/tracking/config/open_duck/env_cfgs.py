@@ -3,10 +3,12 @@
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs.mdp.actions import JointPositionActionCfg
 from mjlab.managers.observation_manager import ObservationGroupCfg
+from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
-from mjlab.tasks.tracking.mdp import MotionCommandCfg
 
 from src.assets.robots import OPEN_DUCK_ACTION_SCALE, get_open_duck_robot_cfg
+import src.tasks.tracking.mdp as tracking_mdp
+from src.tasks.tracking.mdp import MotionCommandCfg
 from src.tasks.tracking.tracking_env_cfg import make_tracking_env_cfg
 
 from .randomization import (
@@ -95,6 +97,22 @@ def open_duck_flat_tracking_env_cfg(
 
   cfg.rewards["motion_global_root_pos"].params["std"] = 0.08
   cfg.rewards["motion_body_pos"].params["std"] = 0.08
+  cfg.rewards["joint_limit"].params["asset_cfg"] = SceneEntityCfg(
+    "robot", joint_names=(r"^(?!.*_backlash$).*",)
+  )
+
+  cfg.observations["actor"].terms["joint_pos"].func = (
+    tracking_mdp.effective_non_backlash_joint_pos_rel
+  )
+  cfg.observations["actor"].terms["joint_vel"].func = (
+    tracking_mdp.effective_non_backlash_joint_vel_rel
+  )
+  cfg.observations["critic"].terms["joint_pos"].func = (
+    tracking_mdp.effective_non_backlash_joint_pos_rel
+  )
+  cfg.observations["critic"].terms["joint_vel"].func = (
+    tracking_mdp.effective_non_backlash_joint_vel_rel
+  )
 
   cfg.terminations["anchor_pos"].params["threshold"] = 0.08
   cfg.terminations["ee_body_pos"].params["threshold"] = 0.08
