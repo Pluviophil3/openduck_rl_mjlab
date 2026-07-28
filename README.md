@@ -437,6 +437,10 @@ debugging artifacts.  They are intentionally not part of this clean migration:
 | `scripts/record_checkpoint.py` | Video recording helper for local checkpoints. |
 | `scripts/replay_open_duck_reference_motion.py` | Viewer replay utility used to validate motion files interactively. |
 | `watch_checkpoint.sh` | Local watcher for checkpoint/video generation. |
+| `goal.md` | Development planning notes from the old workspace. |
+| `doc/open_duck_mjcf_report.json` | Generated MJCF inspection report. |
+| `doc/open_duck_sim2real_randomization.md` | Earlier randomization design note; superseded by this README and source comments. |
+| `doc/openduck_training.md` | Earlier training note; superseded by this README. |
 | `models/Forward_headshake/`, `models/Sway_t1/`, `models/Sway_t2/` | Local checkpoints, ONNX exports, videos, TensorBoard events, and params from experiments. |
 | `logs/`, `wandb/`, `MUJOCO_LOG.TXT`, `unitree_rl_mjlab.egg-info/`, `__pycache__/` | Generated runtime/build/cache artifacts. |
 
