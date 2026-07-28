@@ -1,5 +1,7 @@
 # OpenDuck RL MJLab
 
+[中文说明](README_zh.md)
+
 This repository is a clean fork of upstream `openduck_rl_mjlab` with the
 OpenDuck Mini V2 motion-tracking work migrated in small commits.  The upstream
 base is `origin/main` at commit `1425b15` (`Fix the warnings during
