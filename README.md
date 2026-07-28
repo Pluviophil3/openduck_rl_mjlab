@@ -460,7 +460,8 @@ c962bfc Adapt tracking runtime for OpenDuck
 ec154b6 Add OpenDuck reference motions
 7558991 Add OpenDuck training and play scripts
 ab822d6 Use local tracking MDP imports
+44eb49f Document OpenDuck MJLab fork
+938d422 Add OpenDuck randomization tests
 ```
 
-The final README commit documents the resulting clean fork and the migration
-choices.
+The README documents the resulting clean fork and the migration choices.
