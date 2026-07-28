@@ -1,238 +1,466 @@
-# Unitree RL Mjlab
+# OpenDuck RL MJLab
 
+This repository is a clean fork of upstream `openduck_rl_mjlab` with the
+OpenDuck Mini V2 motion-tracking work migrated in small commits.  The upstream
+base is `origin/main` at commit `1425b15` (`Fix the warnings during
+rough-terrain training.`).
 
-## ✳️ Overview
-Unitree RL Mjlab is a reinforcement learning project built upon the
-[mjlab](https://github.com/mujocolab/mjlab.git), using MuJoCo as its 
-physics simulation backend, currently supporting Unitree Go2, A2, As2, G1, R1, H1_2 and H2.
+The main new task IDs are:
 
-Mjlab combines [Isaac Lab](https://github.com/isaac-sim/IsaacLab)'s proven API
-with best-in-class [MuJoCo](https://github.com/google-deepmind/mujoco_warp)
-physics to provide lightweight, modular abstractions for RL robotics research
-and sim-to-real deployment.
-
-<div align="center">
-
-| <div align="center">  MuJoCo </div>                                                                                                                                           | <div align="center"> Physical </div>                                                                                                                                               |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <div style="width:250px; height:150px; overflow:hidden;"><img src="doc/gif/g1-velocity.gif" style="width:100%; height:100%; object-fit:cover; object-position:center;"></div> | <div style="width:250px; height:150px; overflow:hidden;"><img src="doc/gif/g1-velocity-real.gif" style="width:100%; height:100%; object-fit:cover; object-position:center;"></div> |
-
-</div>
-
-
-## 📦 Installation and Configuration
-
-Please refer to [setup.md](doc/setup_en.md) for installation and configuration steps.
-
-
-## 🔁 Process Overview
-
-The basic workflow for using reinforcement learning to achieve motion control is:
-
-`Train` → `Play` → `Sim2Real`
-
-- **Train**: The agent interacts with the MuJoCo simulation and optimizes policies through reward maximization.
-- **Play**: Replay trained policies to verify expected behavior.
-- **Sim2Real**: Deploy trained policies to physical Unitree robots for real-world execution.
-
-
-## 🛠️ Usage Guide
-
-### 1. Velocity Tracking Training
-
-Run the following command to train a velocity tracking policy:
-
-```bash
-python scripts/train.py Unitree-G1-Flat --env.scene.num-envs=4096
+```text
+OpenDuck-Tracking
+OpenDuck-Tracking-No-State-Estimation
 ```
 
-Multi-GPU Training: Scale to multiple GPUs using --gpu-ids:
+`OpenDuck-Tracking-No-State-Estimation` is the default training target used by
+the helper scripts.  It removes privileged actor observations for base linear
+velocity and motion-anchor position, while the critic still receives privileged
+tracking state.
+
+## What changed from upstream
+
+The fork adds OpenDuck-specific source changes without copying local training
+logs, W&B runs, or checkpoint artifacts.
+
+| Area | Change |
+| --- | --- |
+| Robot asset | Added `src/assets/robots/open_duck_mini_v2/` with STL/PNG assets, `open_duck_mini_v2.xml`, `open_duck_mini_v2_real.xml`, scene XMLs, and `open_duck_constants.py`. |
+| Task config | Added `src/tasks/tracking/config/open_duck/` with task registration, PPO config, OpenDuck environment config, and domain-randomization profiles. |
+| Tracking MDP | Added OpenDuck action processing, backlash-aware motion loading, effective non-backlash joint observations, foot-contact observation, and clipped action history. |
+| Runtime imports | Training/play/export code uses the local `src.tasks.tracking.mdp` instead of the upstream `mjlab.tasks.tracking.mdp` so the OpenDuck MDP extensions are used everywhere. |
+| Motion data | Added OpenDuck NPZ motions under `src/assets/motions/open_duck/`, including 16-joint legacy clips and 26-joint real-XML/backlash clips. |
+| Data tools | Added `scripts/duck_json_to_npz.py` and `scripts/resample_motion_npz.py` for constructing motion NPZ files. |
+| Run scripts | Added `train.sh`, `forward_train.sh`, `vis.sh`, and `test.sh`. |
+| Dependencies | `setup.py` now includes `mujoco==3.5.0`, `mujoco-warp==3.5.0`, `warp-lang==1.12.0`, and `scipy`. |
+
+## Install
+
+Create and activate your Python environment, then install this package editable:
 
 ```bash
-python scripts/train.py Unitree-G1-Flat \
-  --gpu-ids 0 1 \
-  --env.scene.num-envs=4096
+pip install -e .
 ```
 
-- The first argument (e.g., Mjlab-Velocity-Flat-Unitree-G1) specifies the training task.
-Available velocity tracking tasks:
-  - Unitree-Go2-Flat
-  - Unitree-G1-Flat
-  - Unitree-G1-23Dof-Flat
-  - Unitree-H1_2-Flat
-  - Unitree-A2-Flat
-  - Unitree-R1-Flat
-
-> [!NOTE]
-> For more details, refer to the mjlab documentation:
-> [mjlab documentation](https://mujocolab.github.io/mjlab/index.html).
-
-### 2. Motion Imitation Training
-
-Train a Unitree G1 to mimic reference motion sequences.
-
-<div style="margin-left: 20px;">
-
-#### 2.1 Prepare Motion Files
-
-Prepare csv motion files in mjlab/motions/g1/ and convert them to npz format:
+For headless training, the scripts set MuJoCo through the Python runtime.  If
+your machine needs an explicit renderer, set:
 
 ```bash
-python scripts/csv_to_npz.py \
---input-file src/assets/motions/g1/dance1_subject2.csv \
---output-name dance1_subject2.npz \
---input-fps 30 \
---output-fps 50 \
---robot g1 # g1 or g1_23dof
+export MUJOCO_GL=egl
 ```
 
-**npz files will be stored at:**：`src/motions/g1/...`
-
-#### 2.2 Training
-
-After generating the NPZ file, launch imitation training:
+## List Tasks
 
 ```bash
-python scripts/train.py Unitree-G1-Tracking-No-State-Estimation --motion_file=src/assets/motions/g1/dance1_subject2.npz --env.scene.num-envs=4096
+python scripts/list_envs.py OpenDuck
 ```
 
-Available tasks:
-  - Unitree-G1-Tracking-No-State-Estimation
-  - Unitree-G1-23Dof-Tracking-No-State-Estimation
+Expected task IDs:
 
-</div>
-
-> [!NOTE]
-> For detailed motion imitation instructions, refer to the BeyondMimic documentation:
-> [BeyondMimic documentation](https://github.com/HybridRobotics/whole_body_tracking/blob/main/README.md#motion-preprocessing--registry-setup).
-
-#### ⚙️  Parameter Description
-- `--env.scene`: simulation scene configuration (e.g., num_envs, dt, ground type, gravity, disturbances)
-- `--env.observations`: observation space configuration (e.g., joint state, IMU, commands, etc.)
-- `--env.rewards`: reward terms used for policy optimization
-- `--env.commands`: task commands (e.g., velocity, pose, or motion targets)
-- `--env.terminations`: termination conditions for each episode
-- `--agent.seed`: random seed for reproducibility
-- `--agent.resume`: resume from the last saved checkpoint when enabled
-- `--agent.policy`: policy network architecture configuration
-- `--agent.algorithm`: reinforcement learning algorithm configuration (PPO, hyperparameters, etc.)
-
-**Training results are stored at**：`logs/rsl_rl/<robot>_(velocity | tracking)/<date_time>/model_<iteration>.pt`
-
-### 3. Simulation Validation
-
-To visualize policy behavior in MuJoCo:
-
-Velocity tracking:
-```bash
-python scripts/play.py Unitree-G1-Flat --checkpoint_file=logs/rsl_rl/g1_velocity/2026-xx-xx_xx-xx-xx/model_xx.pt
+```text
+OpenDuck-Tracking
+OpenDuck-Tracking-No-State-Estimation
 ```
 
-Motion imitation:
-```bash
-python scripts/play.py Unitree-G1-Tracking-No-State-Estimation --motion_file=src/assets/motions/g1/dance1_subject2.npz --checkpoint_file=logs/rsl_rl/g1_tracking/2026-xx-xx_xx-xx-xx/model_xx.pt
-```
+## Train
 
-**Note**：
-
-- During training, policy.onnx and policy.onnx.data are also exported for deployment onto physical robots.
-
-**Visualization**：
-
-| Go2                              | G1                             | H1_2                               | G1_mimic                          |
-|----------------------------------|--------------------------------|------------------------------------|-----------------------------------|
-| ![go2](doc/gif/go2-velocity.gif) | ![g1](doc/gif/g1-velocity.gif) | ![h1_2](doc/gif/h1_2-velocity.gif) | ![g1_mimic](doc/gif/g1-mimic.gif) |
-
-### 4. Real Deployment
-
-Before deployment, install the required communication tools:
-- [cyclonedds](https://github.com/eclipse-cyclonedds/cyclonedds.git)
-- [unitree_sdk2](https://github.com/unitreerobotics/unitree_sdk2.git)
-
-<div style="margin-left: 20px;">
-
-#### 4.1 Power On the Robot
-Start the robot in suspended state and wait until it enters `zero-torque` mode.
-
-#### 4.2 Enable Debug Mode
-While in `zero-torque` mode, press `L2 + R2` on the controller. The robot will enter `debug mode` with joint damping enabled.
-
-#### 4.3 Connect to the Robot
-Connect your PC to the robot via Ethernet. Configure the network as:
-- Address：`192.168.123.222`
-- Netmask：`255.255.255.0`
-
-Use `ifconfig` to determine the Ethernet device name for deployment.
-
-#### 4.4 Compilation
-
-Example: Unitree G1 velocity control.
-Place `policy.onnx` and `policy.onnx.data` into: `deploy/robots/g1/config/policy/velocity/v0/exported`.
-Then compile:
+Default sway training:
 
 ```bash
-cd deploy/robots/g1
-mkdir build && cd build
-cmake .. && make
+bash train.sh
 ```
 
-#### 4.5 Deployment
-
-## 4.5.1 Simulation Deployment
-
-Before deploying on the real robot, it is recommended to perform simulation deployment using [unitree_mujoco](https://github.com/unitreerobotics/unitree_mujoco)
-to prevent abnormal behaviors on the physical robot. This framework has already integrated it.
-
-Build unitree_mujoco：
+Default forward/head-motion training:
 
 ```bash
-cd simulate
-mkdir build && cd build
-cmake .. && make -j8
+bash forward_train.sh
 ```
 
-Launch the simulator (note that a gamepad must be connected):
+Both scripts accept environment variable overrides:
 
 ```bash
-./simulate/build/unitree_mujoco
+TASK=OpenDuck-Tracking-No-State-Estimation \
+MOTION_FILE=src/assets/motions/open_duck/new_motion_realxml_backlash.npz \
+NUM_ENVS=4096 \
+RUN_NAME=forward_new_obs_safety \
+RANDOMIZATION_PROFILE=baseline \
+bash forward_train.sh
 ```
 
-You can select the corresponding robot in `simulate/config`
-
-Launch the simulation control program:
+You can also call `scripts/train.py` directly:
 
 ```bash
-cd deploy/robots/g1/build
-./g1_ctrl --network=lo
+python scripts/train.py \
+  OpenDuck-Tracking-No-State-Estimation \
+  --motion-file=src/assets/motions/open_duck/A2_-_Sway_t2_stageii_realxml.npz \
+  --env.scene.num-envs=4096 \
+  --agent.run-name=A2_-_Sway_t2_stageii_realxml
 ```
 
-## 4.5.2 Real-Robot Deployment
+Useful direct flags:
 
-Launch the control program on the real robot:
+| Flag | Meaning |
+| --- | --- |
+| `--motion-file` | Required for tracking tasks. Points to an OpenDuck NPZ clip. |
+| `--randomization-profile` | Optional OpenDuck profile override: `nominal`, `baseline`, `sensor`, `dynamics`, `actuator`, `latency`, `light`, `full`. |
+| `--checkpoint-file` | Optional local `.pt` checkpoint to initialize or resume from directly. |
+| `--env.scene.num-envs` | Number of parallel MuJoCo environments. |
+| `--agent.run-name` | Suffix for the run directory under `logs/rsl_rl/open_duck_tracking/`. |
+
+## Play A Checkpoint
+
+Pass a checkpoint explicitly:
 
 ```bash
-cd deploy/robots/g1/build
-./g1_ctrl --network=enp5s0
+bash vis.sh logs/rsl_rl/open_duck_tracking/<run>/model_7500.pt
 ```
 
-**Arguments**：
-- `network`: The network interface used to connect to the robot. Use `lo` for simulation deployment, and `enp5s0` for the real robot(You can check it using the `ifconfig` command) 
+Or set variables:
 
-</div>
+```bash
+MOTION_FILE=src/assets/motions/open_duck/new_motion_realxml_backlash.npz \
+CHECKPOINT_FILE=logs/rsl_rl/open_duck_tracking/<run>/model_7500.pt \
+VIEWER=auto \
+bash vis.sh
+```
 
-**Deployment Results**：
+`vis.sh` tries to find the newest `model_*.pt` under
+`logs/rsl_rl/open_duck_tracking/` if no checkpoint argument is provided.
 
-| Go2                                                    | G1                                                    | H1_2           | G1_mimic                                           |
-|--------------------------------------------------------|-------------------------------------------------------|----------------|----------------------------------------------------|
-| <img src="doc/gif/go2-velocity-real.gif" width="300"/> | <img src="doc/gif/g1-velocity-real.gif" width="300"/> | <img src="doc/gif/h1_2-velocity-real.gif" width="300"/> | <img src="doc/gif/g1-mimic-real.gif" width="300"/> |
+## Smoke Test
 
+```bash
+bash test.sh
+```
 
-## 🎉  Acknowledgements
+This compiles Python files, lists OpenDuck tasks, and prints the shape of the
+default forward motion NPZ.
 
-This project would not be possible without the contributions of the following repositories:
+## Robot Asset
 
-- [mjlab](https://github.com/mujocolab/mjlab.git): training and execution framework
-- [whole_body_tracking](https://github.com/HybridRobotics/whole_body_tracking.git): versatile humanoid motion tracking framework
-- [rsl_rl](https://github.com/leggedrobotics/rsl_rl.git): reinforcement learning algorithm implementation
-- [mujoco_warp](https://github.com/google-deepmind/mujoco_warp.git): GPU-accelerated rendering and simulation interface
-- [mujoco](https://github.com/google-deepmind/mujoco.git): high-fidelity rigid-body physics engine
+The main robot config is:
+
+```text
+src/assets/robots/open_duck_mini_v2/open_duck_constants.py
+```
+
+Important XML files:
+
+| File | Purpose |
+| --- | --- |
+| `open_duck_mini_v2.xml` | Nominal OpenDuck model. |
+| `open_duck_mini_v2_real.xml` | Real/backlash-aware model used by training and data tools. |
+| `open_duck_mini_v2_no_head.xml` | Variant without the head assembly. |
+| `scene_mjx_flat_terrain.xml` | Flat terrain scene. |
+| `scene_mjx_rough_terrain.xml` | Rough terrain scene. |
+| `scene_training_neutral.xml` | Training scene with neutral setup. |
+
+`OPEN_DUCK_XML` points to `open_duck_mini_v2_real.xml`.
+
+The real XML has 26 MuJoCo joints after the free root:
+
+```text
+16 non-backlash joints + 10 passive *_backlash joints
+```
+
+The effective tracking joint state sums each main joint with its matching
+`*_backlash` joint when present, and drops the passive backlash columns from
+policy-visible joint observations and reference commands.
+
+## Actions
+
+The policy action is joint-position target offset.
+
+| Item | Value |
+| --- | --- |
+| Action term | `joint_pos` |
+| Action class | `OpenDuckJointPositionAction` |
+| Policy action dimension | `14` |
+| Controlled joints | 10 leg joints plus `neck_pitch`, `head_pitch`, `head_yaw`, `head_roll` |
+| Not controlled by policy | `left_antenna`, `right_antenna`, passive `*_backlash` joints |
+| Scale | `0.25` rad for each controlled joint pattern |
+| Offset | `use_default_offset=True` |
+| Raw action clip | `[-20, 20]` before scaling |
+| Joint limit safety | Clips targets inside MuJoCo joint limits with `0.02` rad margin |
+| Optional rate limit | `max_target_step`, disabled by default |
+| Optional low-pass filter | `cutoff_frequency`, disabled by default |
+
+The action sent to MuJoCo is:
+
+```text
+target = clipped_raw_action * OPEN_DUCK_ACTION_SCALE + default_joint_position
+```
+
+Then optional rate limiting, joint-limit safety clipping, and optional low-pass
+filtering are applied.
+
+## Actor Observations
+
+Actor observations are concatenated in the order defined by
+`open_duck_flat_tracking_env_cfg`.
+
+With state estimation (`OpenDuck-Tracking`):
+
+| Term | Dim | Meaning |
+| --- | ---: | --- |
+| `command` | 32 | Reference effective joint position and velocity, `16 + 16`. |
+| `motion_anchor_pos_b` | 3 | Desired trunk anchor position in the robot anchor frame. |
+| `base_lin_vel` | 3 | IMU linear velocity. |
+| `base_ang_vel` | 3 | IMU angular velocity. |
+| `base_lin_acc` | 3 | IMU linear acceleration. |
+| `joint_pos` | 16 | Effective non-backlash joint position relative to default. |
+| `joint_vel` | 16 | Effective non-backlash joint velocity. |
+| `actions` | 42 | Current and previous two clipped raw action vectors, `14 * 3`. |
+| `feet_contact` | 2 | Binary contact for left and right TPU foot bottoms. |
+| **Total** | **120** | Actor observation width. |
+
+Without state estimation (`OpenDuck-Tracking-No-State-Estimation`):
+
+| Removed term | Dim |
+| --- | ---: |
+| `motion_anchor_pos_b` | 3 |
+| `base_lin_vel` | 3 |
+
+The no-state actor width is therefore `114`.
+
+## Critic Observations
+
+The critic keeps privileged information:
+
+| Term | Dim | Meaning |
+| --- | ---: | --- |
+| `command` | 32 | Reference effective joint position and velocity. |
+| `motion_anchor_pos_b` | 3 | Desired trunk anchor position in robot frame. |
+| `motion_anchor_ori_b` | 6 | Desired anchor orientation as first two rotation-matrix columns. |
+| `body_pos` | 24 | 8 tracked body positions, `8 * 3`. |
+| `body_ori` | 48 | 8 tracked body orientations, `8 * 6`. |
+| `base_lin_vel` | 3 | IMU linear velocity. |
+| `base_ang_vel` | 3 | IMU angular velocity. |
+| `base_lin_acc` | 3 | IMU linear acceleration. |
+| `joint_pos` | 16 | Effective non-backlash joint position relative to default. |
+| `joint_vel` | 16 | Effective non-backlash joint velocity. |
+| `actions` | 42 | 3-frame clipped raw action history. |
+| `feet_contact` | 2 | Binary left/right foot contact. |
+| **Total** | **198** | Critic observation width. |
+
+Tracked bodies:
+
+```text
+trunk_assembly
+left_roll_to_pitch_assembly
+knee_and_ankle_assembly_2
+foot_assembly
+right_roll_to_pitch_assembly
+knee_and_ankle_assembly_4
+foot_assembly_2
+head_assembly
+```
+
+## Rewards
+
+The OpenDuck task starts from the shared motion-tracking reward set and tightens
+position tolerances for the smaller robot.
+
+| Reward | Weight | Std / Params |
+| --- | ---: | --- |
+| `motion_global_root_pos` | `0.5` | `std=0.08` for OpenDuck. |
+| `motion_global_root_ori` | `0.5` | `std=0.4`. |
+| `motion_body_pos` | `1.0` | `std=0.08` for OpenDuck. |
+| `motion_body_ori` | `1.0` | `std=0.4`. |
+| `motion_body_lin_vel` | `1.0` | `std=1.0`. |
+| `motion_body_ang_vel` | `1.0` | `std=3.14`. |
+| `action_rate_l2` | `-0.1` | Penalizes action changes. |
+| `joint_limit` | `-10.0` | Excludes passive `*_backlash` joints. |
+| `self_collisions` | `-10.0` | Uses `self_collision` contact sensor with threshold `10.0`. |
+
+Terminations are also tighter than the shared humanoid defaults:
+
+| Termination | OpenDuck value |
+| --- | --- |
+| `anchor_pos` | `0.08` z-only threshold. |
+| `anchor_ori` | Shared threshold `0.8`. |
+| `ee_body_pos` | `0.08` z-only threshold on both feet and head. |
+
+## Domain Randomization
+
+Randomization is implemented in:
+
+```text
+src/tasks/tracking/config/open_duck/randomization.py
+```
+
+Profiles are composable named presets.  `play=True` forces `nominal`.
+Training defaults to `baseline`, and `scripts/train.py` can override it with
+`--randomization-profile`.
+
+| Profile | Purpose |
+| --- | --- |
+| `nominal` | No randomization. Used for play/evaluation. |
+| `baseline` | Observation corruption, reset perturbation, pushes, encoder bias, foot friction, trunk COM offset. |
+| `sensor` | Observation corruption, encoder bias, gyro bias. |
+| `dynamics` | Foot friction, trunk COM, body mass/inertia, damping, friction, armature. |
+| `actuator` | PD gain and effort-limit scaling. |
+| `latency` | Action and observation delay. |
+| `light` | Moderate sensor, dynamics, actuator, and latency randomization. |
+| `full` | Stronger combined randomization. |
+
+Important parameters:
+
+| Parameter | Meaning |
+| --- | --- |
+| `observation_corruption` | Enables actor observation noise/corruption. |
+| `reset_perturbation` | Enables reference-state initialization pose, velocity, and joint perturbations. |
+| `push_robot` | Adds interval base velocity pushes every `1.0` to `3.0` seconds. |
+| `encoder_bias_rad` | Startup joint encoder bias range in radians. |
+| `gyro_bias_rad_s` | Additive gyroscope bias range in rad/s. |
+| `foot_friction` | Absolute friction range for `left/right_foot_bottom_tpu`, shared across foot geoms. |
+| `trunk_com_offset_m` | Additive COM offset range for `trunk_assembly`. |
+| `body_mass_scale` | Body mass/inertia scale through pseudo-inertia randomization. |
+| `joint_damping_scale` | Multiplicative joint damping scale. |
+| `joint_friction_scale` | Multiplicative joint frictionloss scale. |
+| `joint_armature_scale` | Multiplicative joint armature scale. |
+| `kp_scale` | Multiplicative position actuator proportional gain scale. |
+| `effort_scale` | Multiplicative actuator force range scale. |
+| `action_delay_control_steps` | Min/max action delay in control steps, converted to physics steps by `cfg.decimation`. |
+| `observation_delay_control_steps` | Min/max observation delay for `base_ang_vel`, `joint_pos`, and `joint_vel`. |
+
+The reset perturbation ranges are scaled for the approximately 22 cm robot:
+
+```text
+pose x/y: +/-0.02 m
+pose z: +/-0.005 m
+roll/pitch: +/-0.05 rad
+yaw: +/-0.1 rad
+linear velocity x/y: +/-0.2 m/s
+linear velocity z: +/-0.1 m/s
+angular velocity roll/pitch: +/-0.25 rad/s
+angular velocity yaw: +/-0.4 rad/s
+joint position: +/-0.05 rad
+```
+
+## Motion Data
+
+Motion files live in:
+
+```text
+src/assets/motions/open_duck/
+```
+
+| File | FPS | Frames | Joint columns | Notes |
+| --- | ---: | ---: | ---: | --- |
+| `A2_-_Sway_stageii_50hz.npz` | 50 | 600 | 16 | Legacy 16-joint sway clip. |
+| `A2_-_Sway_t2_stageii.npz` | 50 | 798 | 16 | Legacy sway clip without `joint_names`. |
+| `A2_-_Sway_t2_stageii_realxml.npz` | 50 | 798 | 16 | Sway clip with joint names for real XML alignment. |
+| `forward_headshake_40deg_04hz_50hz.npz` | 50 | 500 | 16 | Legacy forward/head-shake clip. |
+| `forward_headshake_40deg_04hz_50hz_realxml_backlash.npz` | 50 | 500 | 26 | Real XML/backlash clip. |
+| `forward_headshake_real_50hz.npz` | 50 | 500 | 26 | Real XML clip. |
+| `new_motion_realxml_backlash.npz` | 50 | 400 | 26 | Current default forward training clip. |
+
+Required NPZ arrays:
+
+```text
+fps
+joint_pos
+joint_vel
+body_pos_w
+body_quat_w
+body_lin_vel_w
+body_ang_vel_w
+joint_names
+body_names
+```
+
+The motion loader accepts either full 26-joint real XML arrays or older 16-joint
+arrays.  If an older clip omits passive backlash columns, the loader aligns by
+`joint_names` and fills backlash columns with zeros.
+
+## Build Motion Data
+
+Convert an OpenDuck generator JSON recording:
+
+```bash
+python scripts/duck_json_to_npz.py \
+  --input input_recording.json \
+  --output src/assets/motions/open_duck/my_motion_realxml_backlash.npz
+```
+
+Resample an existing OpenDuck NPZ and rebuild body kinematics:
+
+```bash
+python scripts/resample_motion_npz.py \
+  src/assets/motions/open_duck/input.npz \
+  src/assets/motions/open_duck/output_50hz.npz \
+  --output-fps 50
+```
+
+## PPO Settings
+
+The OpenDuck PPO runner config is:
+
+```text
+src/tasks/tracking/config/open_duck/rl_cfg.py
+```
+
+Important defaults:
+
+```text
+actor hidden dims: 512, 256, 128
+critic hidden dims: 512, 256, 128
+activation: elu
+actor observation normalization: enabled
+critic observation normalization: enabled
+distribution: GaussianDistribution, scalar std, init_std=1.0
+learning rate: 1e-3, adaptive schedule
+gamma: 0.99
+lambda: 0.95
+entropy coef: 0.005
+steps per env: 24
+save interval: 500
+max iterations: 30001
+logger: wandb
+wandb project: openduck_rl_mjlab
+```
+
+## One-Time Debug Scripts Not Migrated
+
+The source development workspace contained several one-off or generated
+debugging artifacts.  They are intentionally not part of this clean migration:
+
+| Path in old workspace | Reason |
+| --- | --- |
+| `checker/hardware_joint_checker.py` | Hardware joint probing/checking helper. Useful during bring-up, not required for training. |
+| `checker/mujoco_joint_checker.py` | MuJoCo joint probing helper. One-off model inspection. |
+| `checker/joint_checker_common.py` | Shared helper only used by checker scripts. |
+| `checker/plot_joint_logs.py` | Plotting helper for joint debug logs. |
+| `checker/README.md` | Documentation for the checker-only workflow. |
+| `scripts/inspect_open_duck_mjcf.py` | MJCF inspection/report generation script. Its output is not needed at runtime. |
+| `scripts/evaluate_open_duck.py` | Batch checkpoint evaluation script tied to local experiment artifacts. |
+| `scripts/record_checkpoint.py` | Video recording helper for local checkpoints. |
+| `scripts/replay_open_duck_reference_motion.py` | Viewer replay utility used to validate motion files interactively. |
+| `watch_checkpoint.sh` | Local watcher for checkpoint/video generation. |
+| `models/Forward_headshake/`, `models/Sway_t1/`, `models/Sway_t2/` | Local checkpoints, ONNX exports, videos, TensorBoard events, and params from experiments. |
+| `logs/`, `wandb/`, `MUJOCO_LOG.TXT`, `unitree_rl_mjlab.egg-info/`, `__pycache__/` | Generated runtime/build/cache artifacts. |
+
+The reusable parts of that workflow are preserved as source:
+
+```text
+scripts/duck_json_to_npz.py
+scripts/resample_motion_npz.py
+src/assets/motions/open_duck/*.npz
+```
+
+## Commit Migration Order
+
+This branch was built from a clean clone in staged commits:
+
+```text
+2cee8a1 Add OpenDuck Mini robot assets
+b3673dc Add OpenDuck tracking task config
+c962bfc Adapt tracking runtime for OpenDuck
+0828d01 Add OpenDuck motion data tools
+ec154b6 Add OpenDuck reference motions
+7558991 Add OpenDuck training and play scripts
+ab822d6 Use local tracking MDP imports
+```
+
+The final README commit documents the resulting clean fork and the migration
+choices.
