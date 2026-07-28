@@ -20,6 +20,102 @@ OpenDuck-Tracking-No-State-Estimation
 
 这个任务会从 actor 输入里去掉更偏 privileged 的 `motion_anchor_pos_b` 和 `base_lin_vel`，用于更接近无完整状态估计的部署设置；critic 仍保留 privileged tracking 信息以帮助训练。
 
+## 1. 仓库目录框架
+
+```text
+openduck_rl_mjlab/
+├── README.md                                      # 英文说明文档
+├── README_zh.md                                   # 中文说明文档，本文件
+├── LICENCE                                        # 项目许可证
+├── setup.py                                       # Python 包安装与核心依赖声明
+├── train.sh                                       # OpenDuck sway motion 默认训练入口
+├── forward_train.sh                               # OpenDuck forward/head motion 默认训练入口
+├── vis.sh                                         # 加载 checkpoint 并在 MuJoCo viewer 中播放
+├── test.sh                                        # 轻量 smoke test：编译、任务检查、motion shape 检查
+├── scripts/                                       # 训练、播放、数据构造与辅助脚本
+│   ├── train.py                                   # RL 训练入口，支持 randomization profile 和 checkpoint_file
+│   ├── play.py                                    # 策略播放入口，使用本地 tracking MDP
+│   ├── list_envs.py                               # 列出已注册 mjlab task
+│   ├── csv_to_npz.py                              # 上游 G1/G1_23DOF CSV motion 转 NPZ 工具
+│   ├── duck_json_to_npz.py                        # OpenDuck generator JSON -> mjlab reference NPZ
+│   ├── resample_motion_npz.py                     # OpenDuck motion 重采样并重建 body kinematics
+│   └── visualize_terrain.py                       # 上游地形可视化工具
+├── src/                                           # Python 源码
+│   ├── __init__.py                                # 定义 SRC_PATH 等项目路径
+│   ├── assets/                                    # 机器人资产与 motion 数据
+│   │   ├── robots/                                # 机器人模型注册入口
+│   │   │   ├── __init__.py                        # 导出 Unitree 与 OpenDuck robot cfg
+│   │   │   ├── open_duck_mini_v2/                 # OpenDuck Mini V2 新增机器人资产
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── open_duck_constants.py         # OPEN_DUCK_XML、action scale、actuator cfg
+│   │   │   │   └── xmls/                          # OpenDuck MJCF/XML 与 mesh 资源
+│   │   │   │       ├── open_duck_mini_v2.xml      # 名义 OpenDuck 模型
+│   │   │   │       ├── open_duck_mini_v2_real.xml # 真实结构/backlash 模型，训练默认使用
+│   │   │   │       ├── open_duck_mini_v2_no_head.xml
+│   │   │   │       ├── scene.xml
+│   │   │   │       ├── scene_mjx_flat_terrain.xml
+│   │   │   │       ├── scene_mjx_rough_terrain.xml
+│   │   │   │       ├── scene_training_neutral.xml
+│   │   │   │       └── assets/                    # STL/PNG mesh、贴图、高度场
+│   │   │   ├── unitree_a2/                        # 上游 Unitree A2 资产
+│   │   │   ├── unitree_as2/                       # 上游 Unitree AS2 资产
+│   │   │   ├── unitree_g1/                        # 上游 Unitree G1/G1_23DOF 资产
+│   │   │   ├── unitree_go2/                       # 上游 Unitree Go2 资产
+│   │   │   ├── unitree_h1_2/                      # 上游 Unitree H1_2 资产
+│   │   │   ├── unitree_h2/                        # 上游 Unitree H2 资产
+│   │   │   └── unitree_r1/                        # 上游 Unitree R1 资产
+│   │   └── motions/                               # 参考动作数据
+│   │       ├── g1/                                # 上游 G1 motion 目录
+│   │       └── open_duck/                         # OpenDuck 新增 reference motion
+│   │           ├── A2_-_Sway_stageii_50hz.npz
+│   │           ├── A2_-_Sway_t2_stageii.npz
+│   │           ├── A2_-_Sway_t2_stageii_realxml.npz
+│   │           ├── forward_headshake_40deg_04hz_50hz.npz
+│   │           ├── forward_headshake_40deg_04hz_50hz_realxml_backlash.npz
+│   │           ├── forward_headshake_real_50hz.npz
+│   │           └── new_motion_realxml_backlash.npz # forward_train.sh 默认 motion
+│   └── tasks/                                     # 任务注册、环境配置和 MDP
+│       ├── __init__.py                            # 自动 import 并注册本仓库 task
+│       ├── tracking/                              # Motion tracking / imitation 任务
+│       │   ├── tracking_env_cfg.py                # 通用 tracking env 基类配置
+│       │   ├── config/                            # 各机器人 tracking task 配置
+│       │   │   ├── g1/                            # 上游 G1 tracking 配置
+│       │   │   ├── g1_23dof/                      # 上游 G1_23DOF tracking 配置
+│       │   │   └── open_duck/                     # OpenDuck 新增 tracking 配置
+│       │   │       ├── __init__.py                # 注册 OpenDuck-Tracking task
+│       │   │       ├── env_cfgs.py                # OpenDuck 观测、动作、奖励、终止、viewer 配置
+│       │   │       ├── randomization.py           # 域随机化 profile 与实现
+│       │   │       └── rl_cfg.py                  # OpenDuck PPO 超参数
+│       │   ├── mdp/                               # tracking MDP 函数与 term
+│       │   │   ├── __init__.py                    # 导出本地 actions/commands/rewards/observations
+│       │   │   ├── actions.py                     # OpenDuck action safety、clip、history
+│       │   │   ├── commands.py                    # MotionLoader、backlash 对齐、reference command
+│       │   │   ├── metrics.py                     # tracking metric 修改
+│       │   │   ├── observations.py                # effective non-backlash joint、foot contact 等观测
+│       │   │   ├── rewards.py                     # 通用 motion tracking reward
+│       │   │   └── terminations.py                # tracking 终止条件
+│       │   └── rl/                                # tracking runner 与策略导出
+│       │       ├── __init__.py
+│       │       └── runner.py                      # 使用本地 MotionCommand 的 ONNX/export runner
+│       └── velocity/                              # 上游速度跟踪任务，保留不改
+├── tests/                                         # 回归测试
+│   └── test_open_duck_randomization.py            # OpenDuck randomization profile 测试
+├── deploy/                                        # 上游实机部署 C++/ONNXRuntime 目录
+│   ├── include/
+│   ├── robots/
+│   └── thirdparty/
+├── simulate/                                      # 上游 MuJoCo/unitree_sdk2_bridge 仿真程序
+│   ├── CMakeLists.txt
+│   ├── config.yaml
+│   ├── mujoco/
+│   └── src/
+└── doc/                                           # 上游安装、许可证和 GIF 文档资源
+    ├── setup_en.md
+    ├── setup_zh.md
+    ├── gif/
+    └── license/
+```
+
 ## 相比上游修改了什么
 
 | 模块 | 修改内容 |
