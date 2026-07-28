@@ -7,7 +7,7 @@ import torch
 from mjlab.utils.lab_api.math import quat_error_magnitude
 
 if TYPE_CHECKING:
-  from mjlab.tasks.tracking.mdp.commands import MotionCommand
+  from .commands import MotionCommand
 
 
 def compute_mpkpe(command: MotionCommand) -> torch.Tensor:

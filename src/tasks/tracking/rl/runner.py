@@ -12,7 +12,8 @@ from mjlab.rl.exporter_utils import (
   get_base_metadata,
 )
 from mjlab.rl.runner import MjlabOnPolicyRunner
-from mjlab.tasks.tracking.mdp import MotionCommand
+
+from src.tasks.tracking.mdp import MotionCommand
 
 
 class _OnnxMotionModel(nn.Module):
