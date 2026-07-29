@@ -2,6 +2,42 @@
 
 [中文说明](README_zh.md)
 
+## Overview
+
+This repository adapts the `unitree_rl_mjlab` training stack for OpenDuck Mini
+V2 motion imitation.  The goal is to bridge human motion sources, OpenDuck
+retargeting, reinforcement-learning training, and real-robot runtime deployment
+in one reproducible workflow.
+
+Key changes based on `unitree_rl_mjlab`:
+
+- Added OpenDuck Mini V2 robot assets, MuJoCo XMLs, joint constants, and
+  backlash-aware real-model variants.
+- Added OpenDuck tracking task registrations, PPO settings, observation terms,
+  action processing, and domain-randomization profiles.
+- Added OpenDuck reference-motion conversion and resampling tools for
+  JSON/CSV/NPZ motion datasets.
+- Added helper scripts for training, visualization, smoke testing, and forward
+  motion experiments.
+- Kept the Unitree/MJLab workflow shape while replacing the robot-specific
+  assets, MDP extensions, and motion-tracking configuration with OpenDuck
+  equivalents.
+
+## Demo
+
+<div align="center">
+  <img src="doc/gif/open-duck-rl.gif" alt="OpenDuck RL motion imitation demo" width="560">
+</div>
+
+## Pipeline And Related Projects
+
+![OpenDuck project pipeline](doc/project_pipeline.png)
+
+Reference motions are generated from human motion sources and retargeted through
+[Pluviophil3/GMR_openduck](https://github.com/Pluviophil3/GMR_openduck).
+Policies trained in this repository can be connected to the physical-robot
+runtime in [Pluviophil3/duck_runtime](https://github.com/Pluviophil3/duck_runtime).
+
 This repository is a clean fork of upstream `openduck_rl_mjlab` with the
 OpenDuck Mini V2 motion-tracking work migrated in small commits.  The upstream
 base is `origin/main` at commit `1425b15` (`Fix the warnings during
